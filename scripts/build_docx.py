@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert the repository's LaTeX CV to main.docx using Pandoc."""
+"""Convert the repository's LaTeX resume to main.docx using Pandoc."""
 
 import json
 import re
@@ -49,9 +49,7 @@ def namespace_ids(node, prefix):
 
 def main():
     source = expand_inputs(ROOT / "main.tex")
-    body = source.split(r"\begin{document}", 1)[1].split(
-        r"\end{document}", 1
-    )[0]
+    body = source.split(r"\begin{document}", 1)[1].split(r"\end{document}", 1)[0]
     macros = r"""
 \newcommand{\contactsep}{; }
 \newcommand{\cventry}[4]{\par\textbf{#1}, #2\par\textit{#3}, #4\par}
@@ -59,19 +57,35 @@ def main():
     bibliographies = {}
 
     def bibliography(match):
-        path = Path(match[1])
-        if not path.suffix:
-            path = path.with_suffix(".bib")
-        resolved = (ROOT / path).resolve()
-        resolved.relative_to(ROOT)
-        if not resolved.is_file():
-            raise FileNotFoundError(resolved)
+        resolved = []
+        for name in match[1].split(","):
+            path = Path(name.strip())
+            if not path.suffix:
+                path = path.with_suffix(".bib")
+            file = (ROOT / path).resolve()
+            file.relative_to(ROOT)
+            if not file.is_file():
+                raise FileNotFoundError(file)
+            resolved.append(file)
+        keys = []
+        for arg in re.findall(r"\\nocite\{([^}]*)\}", match[2]):
+            keys.extend(key.strip() for key in arg.split(",") if key.strip())
+        if not keys:
+            raise RuntimeError("refsection without \\nocite; update the DOCX converter")
+        if "*" in keys:
+            nocite = '"@*"'
+        else:
+            nocite = "[" + ",".join(json.dumps("@" + key) for key in keys) + "]"
         marker = f"DOCXBIB{len(bibliographies)}"
-        doc = json.loads(pandoc(
-            "--from=markdown", "--to=json", "--citeproc",
-            f"--bibliography={resolved}",
-            source='---\nnocite: "@*"\n---\n',
-        ))
+        doc = json.loads(
+            pandoc(
+                "--from=markdown",
+                "--to=json",
+                "--citeproc",
+                *[f"--bibliography={file}" for file in resolved],
+                source=f"---\nnocite: {nocite}\n---\n",
+            )
+        )
         blocks = []
         for block in doc["blocks"]:
             if block["t"] == "Div" and block["c"][0][0] == "refs":
@@ -83,11 +97,15 @@ def main():
         return "\n\\section*{" + marker + "}\n"
 
     body = re.sub(
-        r"\\begin\{refsection\}\s*\[([^\]]+)\].*?\\end\{refsection\}",
-        bibliography, body, flags=re.S,
+        r"\\begin\{refsection\}\s*\[([^\]]+)\](.*?)\\end\{refsection\}",
+        bibliography,
+        body,
+        flags=re.S,
     )
     if r"\printbibliography" in body or r"\begin{refsection}" in body:
-        raise RuntimeError("Unsupported bibliography structure; update the DOCX converter")
+        raise RuntimeError(
+            "Unsupported bibliography structure; update the DOCX converter"
+        )
     doc = json.loads(pandoc("--from=latex", "--to=json", source=macros + body))
     blocks = []
     inserted = set()
@@ -105,8 +123,11 @@ def main():
         raise RuntimeError("Some bibliography placeholders were not replaced")
     doc["blocks"] = blocks
     pandoc(
-        "--from=json", "--to=docx", "--standalone",
-        "--output=main.docx", source=json.dumps(doc),
+        "--from=json",
+        "--to=docx",
+        "--standalone",
+        "--output=main.docx",
+        source=json.dumps(doc),
     )
     output = ROOT / "main.docx"
     if not output.is_file() or output.stat().st_size == 0:
@@ -115,4 +136,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
