@@ -1,36 +1,44 @@
-# Nicholas M. Synovic — Curriculum Vitae
+<!-- prettier-ignore -->
+<div align="center">
 
-LaTeX source for my curriculum vitae (CV), with modular sections, BibLaTeX-managed publication records, and automated PDF builds through GitHub Actions.
+# Nicholas M. Synovic — Resume
+
+_LaTeX source for my resume, with modular sections, BibLaTeX-managed publication records, and automated PDF and DOCX builds through GitHub Actions._
+
+[![License](docs/license_badge.svg)](LICENSE)
 
 [Website](https://nicholassynovic.github.io/) · [LinkedIn](https://www.linkedin.com/in/nsynovic) · [GitHub](https://github.com/NicholasSynovic)
 
-## Get the PDF
+[Downloads](#downloads) • [Build Locally](#build-locally) • [Updating the Resume](#updating-the-resume) • [License](#license)
 
-The [Compile CV workflow](https://github.com/NicholasSynovic/cv/actions/workflows/build.yml) builds the CV on every push and pull request and can also be triggered manually.
+</div>
+
+## Downloads
+
+Two GitHub Actions workflows build the resume on every push and pull request, and can also be triggered manually:
+
+- [Compile Resume](https://github.com/NicholasSynovic/resume/actions/workflows/build-pdf.yml) compiles `main.tex` and uploads the PDF as the `curriculum-vitae` artifact.
+- [Compile Resume DOCX](https://github.com/NicholasSynovic/resume/actions/workflows/build-docx.yml) converts the source to DOCX with Pandoc and uploads it as the `curriculum-vitae-docx` artifact.
 
 To download a compiled copy:
 
 1. Open the workflow and select a successful run.
-2. Download the `curriculum-vitae` artifact.
-3. Extract the archive to access `main.pdf`.
+2. Download the artifact.
+3. Extract the archive to access `NicholasMSynovic_resume.pdf` or `NicholasMSynovic_resume.docx`.
 
-PDF artifacts are retained for 30 days.
+Artifacts are retained for 30 days.
+
+> [!NOTE]
+> Pushing a Git tag publishes both files to a [GitHub Release](https://github.com/NicholasSynovic/resume/releases).
 
 ## Contents
 
-The CV includes sections covering:
+The resume includes sections covering:
 
-- Academic preparation
-- Academic recognition
-- Teaching experience
-- Research and work
-- Journal articles
-- Conference papers
-- Preprint manuscripts
-- Presentations
-- Media appearances
-- Competitions
-- Service
+- Experience
+- Education
+- Selected Publications
+- Technical Skills
 
 ## Repository Structure
 
@@ -38,17 +46,26 @@ The CV includes sections covering:
 .
 ├── .github/
 │   └── workflows/
-│       └── build.yml       # Automated PDF compilation and artifact uploads
-├── bibliography/
-│   └── journals.bib        # Bibliography data loaded by main.tex
+│       ├── build-pdf.yml    # Automated PDF compilation and release uploads
+│       └── build-docx.yml   # Automated DOCX compilation and release uploads
+├── bibliography/            # BibLaTeX data for Selected Publications
+│   ├── conferences.bib
+│   ├── journals.bib
+│   ├── preprints.bib
+│   └── presentations.bib
+├── docs/
+│   └── license_badge.svg    # License badge referenced by this README
 ├── misc/
-│   └── typesetting.tex     # Packages, formatting, and reusable commands
-├── sections/               # Individual CV sections
+│   └── typesetting.tex      # Packages, formatting, and reusable commands
+├── scripts/
+│   └── build_docx.py        # Converts the LaTeX source to DOCX with Pandoc
+├── sections/                # Individual resume sections
 ├── LICENSE
-└── main.tex                # Document entry point and contact information
+├── main.tex                 # Document entry point and contact information
+└── README.md
 ```
 
-Content and presentation are maintained separately: `main.tex` assembles the document, `sections/` holds the CV entries, and `misc/typesetting.tex` controls the layout.
+Content and presentation are maintained separately: `main.tex` assembles the document, `sections/` holds the resume entries, and `misc/typesetting.tex` controls the layout.
 
 ## Build Locally
 
@@ -64,13 +81,15 @@ Install a LaTeX distribution with:
 
 The bibliography uses BibLaTeX with the Biber backend.
 
+The DOCX build additionally requires Python 3 and Pandoc on the `PATH`; the DOCX workflow pins Pandoc 3.14.
+
 ### Compile
 
 Clone the repository and build from its root directory:
 
 ```sh
-git clone [https://github.com/NicholasSynovic/cv.git](https://github.com/NicholasSynovic/cv.git)
-cd cv
+git clone https://github.com/NicholasSynovic/resume.git
+cd resume
 
 latexmk -pdf -file-line-error -halt-on-error -interaction=nonstopmode main.tex
 ```
@@ -86,6 +105,16 @@ pdflatex -interaction=nonstopmode -halt-on-error main.tex
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 ```
 
+### Build the DOCX
+
+From the repository root:
+
+```sh
+python3 scripts/build_docx.py
+```
+
+The script expands all `\input{...}` files, renders each bibliography `refsection` through Pandoc's citeproc, and writes `main.docx`.
+
 ### Clean Build Files
 
 Remove intermediate compilation files while keeping the PDF:
@@ -94,7 +123,7 @@ Remove intermediate compilation files while keeping the PDF:
 latexmk -c main.tex
 ```
 
-## Updating the CV
+## Updating the Resume
 
 ### Content
 
@@ -104,7 +133,7 @@ Contact information and profile links are defined directly in `main.tex`.
 
 ### Publications
 
-Update `bibliography/journals.bib` and the relevant publication section. Additional bibliography files can be registered in `main.tex` with `\addbibresource{...}`.
+Selected Publications cites explicit entry keys with `\nocite` inside a `\begin{refsection}[...]` block that lists the bibliography files to use — currently `bibliography/conferences.bib` and `bibliography/preprints.bib`. To add a publication, add an entry to the relevant `.bib` file and list its key in `\nocite`. Other bibliography files, such as `journals.bib` and `presentations.bib`, can be included the same way.
 
 Bibliography entries are sorted by year descending, then name and title. DOI links are enabled; when an entry has a DOI, its URL field is suppressed in the rendered bibliography.
 
@@ -128,9 +157,9 @@ The `\cventry` command formats an institution or employer, location, position or
 
 GitHub Actions compiles `main.tex` using `xu-cheng/latex-action` and uploads the resulting PDF as the `curriculum-vitae` artifact.
 
-If compilation fails, available `main.log` and `main.blg` files are uploaded as `latex-build-logs` and retained for 7 days.
+If compilation fails, available `main.log` and `main.blg` files are uploaded as `latex-build-logs`, and the DOCX build uploads `main-docx.log` as `docx-build-logs`; both are retained for 7 days.
 
-See [the workflow configuration](.github/workflows/build.yml) for build settings.
+See [the PDF workflow configuration](.github/workflows/build-pdf.yml) and [the DOCX workflow configuration](.github/workflows/build-docx.yml) for build settings.
 
 ## License
 
