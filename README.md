@@ -15,7 +15,7 @@ _LaTeX source for my resume, with modular sections, BibLaTeX-managed publication
 
 ## Downloads
 
-Two GitHub Actions workflows build the resume on every push and pull request, and can also be triggered manually:
+Two GitHub Actions workflows build the resume on every push, tag, and pull request, and can also be triggered manually:
 
 - [Compile Resume](https://github.com/NicholasSynovic/resume/actions/workflows/build-pdf.yml) compiles `main.tex` and uploads the PDF as the `curriculum-vitae` artifact.
 - [Compile Resume DOCX](https://github.com/NicholasSynovic/resume/actions/workflows/build-docx.yml) converts the source to DOCX with Pandoc and uploads it as the `curriculum-vitae-docx` artifact.
@@ -46,9 +46,9 @@ The resume includes sections covering:
 .
 ├── .github/
 │   └── workflows/
-│       ├── build-pdf.yml    # Automated PDF compilation and release uploads
-│       └── build-docx.yml   # Automated DOCX compilation and release uploads
-├── bibliography/            # BibLaTeX data for Selected Publications
+│       ├── build-pdf.yml    # Automated PDF compilation and artifact uploads
+│       └── build-docx.yml   # Automated DOCX compilation and artifact uploads
+├── bibliography/            # BibLaTeX data
 │   ├── conferences.bib
 │   ├── journals.bib
 │   ├── preprints.bib
@@ -81,7 +81,7 @@ Install a LaTeX distribution with:
 
 The bibliography uses BibLaTeX with the Biber backend.
 
-The DOCX build additionally requires Python 3 and Pandoc on the `PATH`; the DOCX workflow pins Pandoc 3.14.
+The DOCX build additionally requires Python 3 and [Pandoc](https://github.com/jgm/pandoc) on the `PATH` (the DOCX workflow pins Pandoc 3.14); the build script uses only the Python standard library.
 
 ### Compile
 
@@ -135,6 +135,8 @@ Contact information and profile links are defined directly in `main.tex`.
 
 Selected Publications cites explicit entry keys with `\nocite` inside a `\begin{refsection}[...]` block that lists the bibliography files to use — currently `bibliography/conferences.bib` and `bibliography/preprints.bib`. To add a publication, add an entry to the relevant `.bib` file and list its key in `\nocite`. Other bibliography files, such as `journals.bib` and `presentations.bib`, can be included the same way.
 
+Both the PDF and DOCX builds render exactly the keys listed in `\nocite`.
+
 Bibliography entries are sorted by year descending, then name and title. DOI links are enabled; when an entry has a DOI, its URL field is suppressed in the rendered bibliography.
 
 ### Formatting
@@ -155,11 +157,12 @@ The `\cventry` command formats an institution or employer, location, position or
 
 ## Continuous Integration
 
-GitHub Actions compiles `main.tex` using `xu-cheng/latex-action` and uploads the resulting PDF as the `curriculum-vitae` artifact.
+Two GitHub Actions workflows run on every push, tag, and pull request:
 
-If compilation fails, available `main.log` and `main.blg` files are uploaded as `latex-build-logs`, and the DOCX build uploads `main-docx.log` as `docx-build-logs`; both are retained for 7 days.
+- [.github/workflows/build-pdf.yml](.github/workflows/build-pdf.yml) ("Compile Resume") compiles `main.tex` using `xu-cheng/latex-action` and uploads the PDF as the `curriculum-vitae` artifact.
+- [.github/workflows/build-docx.yml](.github/workflows/build-docx.yml) ("Compile Resume DOCX") runs `scripts/build_docx.py` with Pandoc and uploads the DOCX as the `curriculum-vitae-docx` artifact.
 
-See [the PDF workflow configuration](.github/workflows/build-pdf.yml) and [the DOCX workflow configuration](.github/workflows/build-docx.yml) for build settings.
+If compilation fails, available logs are uploaded as artifacts and retained for 7 days: `main.log` and `main.blg` as `latex-build-logs`, and `main-docx.log` as `docx-build-logs`.
 
 ## License
 

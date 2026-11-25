@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert the repository's LaTeX CV to main.docx using Pandoc."""
+"""Convert the repository's LaTeX resume to main.docx using Pandoc."""
 
 import json
 import re
@@ -67,6 +67,15 @@ def main():
             if not file.is_file():
                 raise FileNotFoundError(file)
             resolved.append(file)
+        keys = []
+        for arg in re.findall(r"\\nocite\{([^}]*)\}", match[2]):
+            keys.extend(key.strip() for key in arg.split(",") if key.strip())
+        if not keys:
+            raise RuntimeError("refsection without \\nocite; update the DOCX converter")
+        if "*" in keys:
+            nocite = '"@*"'
+        else:
+            nocite = "[" + ",".join(json.dumps("@" + key) for key in keys) + "]"
         marker = f"DOCXBIB{len(bibliographies)}"
         doc = json.loads(
             pandoc(
@@ -74,7 +83,7 @@ def main():
                 "--to=json",
                 "--citeproc",
                 *[f"--bibliography={file}" for file in resolved],
-                source='---\nnocite: "@*"\n---\n',
+                source=f"---\nnocite: {nocite}\n---\n",
             )
         )
         blocks = []
@@ -88,7 +97,7 @@ def main():
         return "\n\\section*{" + marker + "}\n"
 
     body = re.sub(
-        r"\\begin\{refsection\}\s*\[([^\]]+)\].*?\\end\{refsection\}",
+        r"\\begin\{refsection\}\s*\[([^\]]+)\](.*?)\\end\{refsection\}",
         bibliography,
         body,
         flags=re.S,
