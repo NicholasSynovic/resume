@@ -1,0 +1,99 @@
+name: Compile CV DOCX
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PANDOC_VERSION: "3.14"
+  PANDOC_SHA256: "c5f4720cdefb3f7bdc5d07202ef579feef0d1370773c873804dd8fdaa8c4f1b8"
+
+jobs:
+  compile:
+    name: Build LaTeX DOCX
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Cache Pandoc installation
+        id: cache_pandoc
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/pandoc/${{ env.PANDOC_VERSION }}
+          key: pandoc-${{ runner.os }}-${{ runner.arch }}-${{ env.PANDOC_VERSION }}-${{ env.PANDOC_SHA256 }}-v1
+
+      - name: Install Pandoc
+        if: steps.cache_pandoc.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          archive="pandoc-${PANDOC_VERSION}-linux-amd64.tar.gz"
+          destination="$HOME/.local/pandoc/${PANDOC_VERSION}"
+          download="$RUNNER_TEMP/$archive"
+          curl --fail --location --retry 3 \
+            "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/${archive}" \
+            --output "$download"
+          printf '%s  %s\n' "$PANDOC_SHA256" "$download" | sha256sum --check -
+          mkdir -p "$destination"
+          tar -xzf "$download" --strip-components=1 -C "$destination"
+
+      - name: Add Pandoc to PATH
+        shell: bash
+        run: echo "$HOME/.local/pandoc/${PANDOC_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Compile CV
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee main-docx.log) 2>&1
+          pandoc --version
+          python3 scripts/build_docx.py
+
+      - name: Rename compiled DOCX
+        id: rename_docx
+        shell: bash
+        run: |
+          filename="NicholasMSynovic_cv.docx"
+          mv main.docx "$filename"
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+
+      - name: Upload compiled DOCX
+        uses: actions/upload-artifact@v7
+        with:
+          name: curriculum-vitae-docx
+          path: ${{ steps.rename_docx.outputs.filename }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish DOCX to GitHub Releases
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: ${{ steps.rename_docx.outputs.filename }}
+          fail_on_unmatched_files: true
+
+      - name: Upload compilation logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: docx-build-logs
+          path: main-docx.log
+          if-no-files-found: ignore
+          retention-days: 7
+

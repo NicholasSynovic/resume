@@ -1,0 +1,113 @@
+% =============================================================================
+% Packages
+% =============================================================================
+
+% Page dimensions and font encoding.
+\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+
+% Section headings and lists.
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% URL line breaking.
+\usepackage{xurl}
+
+% Bibliography management and presentation.
+\usepackage[
+    backend=biber,
+    style=authoryear,
+    sorting=ydnt,
+    maxbibnames=99,
+    giveninits=false,
+    dashed=false,
+    doi=true,
+    url=true,
+    isbn=false
+]{biblatex}
+
+% Hyperlinks; load after biblatex.
+\usepackage[hidelinks]{hyperref}
+
+
+% =============================================================================
+% Page and paragraph formatting
+% =============================================================================
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+
+% =============================================================================
+% Section headings
+% =============================================================================
+
+\titleformat{\section}
+    {\large\bfseries}
+    {}
+    {0pt}
+    {}
+    [\titlerule]
+
+\titleformat{\subsection}
+    {\normalsize\bfseries}
+    {}
+    {0pt}
+    {}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+
+
+% =============================================================================
+% Lists
+% =============================================================================
+
+\setlist[itemize]{
+    leftmargin=*,
+    itemsep=4pt,
+    topsep=4pt,
+    parsep=0pt
+}
+
+
+% =============================================================================
+% Bibliography formatting
+% =============================================================================
+
+\setlength{\bibhang}{1.5em}
+\setlength{\bibitemsep}{0.75\baselineskip}
+
+% Avoid printing a URL when a DOI is already available.
+\AtEveryBibitem{%
+    \iffieldundef{doi}
+        {}
+        {\clearfield{url}}%
+}
+
+
+% =============================================================================
+% Reusable CV commands
+% =============================================================================
+
+% Separator between contact-information items.
+\newcommand{\contactsep}{%
+    \enspace\textperiodcentered\enspace
+}
+
+% Institution/employer, location, position/degree, and dates.
+% Keep each complete entry together on one page.
+\newcommand{\cventry}[4]{%
+    \par\noindent
+    \begin{minipage}{\linewidth}
+        \begin{tabular*}{\linewidth}{
+            @{}l@{\extracolsep{\fill}}r@{}
+        }
+            \textbf{#1} & #2 \\
+        \end{tabular*}\par
+        \noindent\textit{#3}\hfill #4\par
+    \end{minipage}\par
+    \vspace{8pt}%
+}
+
+\newcommand{\visknacks}{\textit{VisKnacks}}

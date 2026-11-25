@@ -1,0 +1,68 @@
+name: Compile CV
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    name: Build LaTeX PDF
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Compile CV
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: main.tex
+          args: -pdf -file-line-error -halt-on-error -interaction=nonstopmode
+
+      - name: Rename compiled PDF
+        id: rename_pdf
+        run: |
+          filename="NicholasMSynovic_cv.pdf"
+          mv main.pdf "$filename"
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+
+      - name: Upload compiled PDF
+        uses: actions/upload-artifact@v7
+        with:
+          name: curriculum-vitae
+          path: ${{ steps.rename_pdf.outputs.filename }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish PDF to GitHub Releases
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: ${{ steps.rename_pdf.outputs.filename }}
+          fail_on_unmatched_files: true
+
+      - name: Upload compilation logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: latex-build-logs
+          path: |
+            main.log
+            main.blg
+          if-no-files-found: ignore
+          retention-days: 7
