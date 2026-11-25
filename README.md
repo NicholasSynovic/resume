@@ -1,24 +1,24 @@
-# Nicholas M. Synovic — Curriculum Vitae
+# Nicholas M. Synovic — Resume
 
-LaTeX source for my curriculum vitae (CV), with modular sections, BibLaTeX-managed publication records, and automated PDF builds through GitHub Actions.
+LaTeX source for my resume, with modular sections, BibLaTeX-managed publication records, and automated PDF builds through GitHub Actions.
 
 [Website](https://nicholassynovic.github.io/) · [LinkedIn](https://www.linkedin.com/in/nsynovic) · [GitHub](https://github.com/NicholasSynovic)
 
 ## Get the PDF
 
-The [Compile CV workflow](https://github.com/NicholasSynovic/cv/actions/workflows/build.yml) builds the CV on every push and pull request and can also be triggered manually.
+The [Compile Resume workflow](https://github.com/NicholasSynovic/resume/actions/workflows/build-pdf.yml) builds the resume on every push and pull request and can also be triggered manually.
 
 To download a compiled copy:
 
 1. Open the workflow and select a successful run.
-2. Download the `curriculum-vitae` artifact.
+2. Download the `resume` artifact.
 3. Extract the archive to access `main.pdf`.
 
 PDF artifacts are retained for 30 days.
 
 ## Contents
 
-The CV includes sections covering:
+The resume includes sections covering:
 
 - Academic preparation
 - Academic recognition
