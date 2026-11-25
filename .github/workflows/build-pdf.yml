@@ -1,4 +1,4 @@
-name: Compile CV
+name: Compile Resume
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Compile CV
+      - name: Compile Resume
         uses: xu-cheng/latex-action@v4
         with:
           root_file: main.tex
@@ -34,7 +34,7 @@ jobs:
       - name: Rename compiled PDF
         id: rename_pdf
         run: |
-          filename="NicholasMSynovic_cv.pdf"
+          filename="NicholasMSynovic_resume.pdf"
           mv main.pdf "$filename"
           echo "filename=$filename" >> "$GITHUB_OUTPUT"
 

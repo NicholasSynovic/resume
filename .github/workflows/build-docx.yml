@@ -1,4 +1,4 @@
-name: Compile CV DOCX
+name: Compile Resume DOCX
 
 on:
   push:
@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: echo "$HOME/.local/pandoc/${PANDOC_VERSION}/bin" >> "$GITHUB_PATH"
 
-      - name: Compile CV
+      - name: Compile Resume
         shell: bash
         run: |
           set -euo pipefail
@@ -68,7 +68,7 @@ jobs:
         id: rename_docx
         shell: bash
         run: |
-          filename="NicholasMSynovic_cv.docx"
+          filename="NicholasMSynovic_resume.docx"
           mv main.docx "$filename"
           echo "filename=$filename" >> "$GITHUB_OUTPUT"
 
